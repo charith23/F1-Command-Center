@@ -2,6 +2,7 @@
 
 **F1 Command Center 2026** is a high-performance Formula 1 analytics and simulation dashboard. Built for enthusiasts and strategists, this application provides dynamic race predictions, qualifying simulations, and detailed insights into the 2026 grid using **Python** and **Streamlit**.
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://f1-command-center-charith.streamlit.app/)
 ---
 
 ## 🚀 Key Features
