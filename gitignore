@@ -1,0 +1,27 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+env/
+.venv/
+env.bak/
+venv.bak/
+
+# Streamlit local config & secrets
+.streamlit/config.toml
+.streamlit/secrets.toml
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Large data files (optional - if you have any big csv files)
+*.csv
+*.xlsx
+
+# Local IDE settings
+.vscode/
+.idea/
