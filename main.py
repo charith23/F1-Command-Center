@@ -194,16 +194,49 @@ with st.container():
 
         def calculate_probabilities(track_type):
             probs = []
+            
+            # 2026 Season Performance Weights (Latest Data)
+            # Mercedes dominating, Red Bull struggling
+            season_weights = {
+                "Red Bull Racing": 0.82,  # Max sits 9th in standings
+                "Mercedes": 1.35,         # Won all 3 opening rounds
+                "Ferrari": 1.15,          # Superb pace
+                "McLaren": 1.10,          # Strong podium contenders
+                "Williams": 0.95,
+                "Audi": 0.90,
+                "Haas": 0.85,
+                "Alpine": 0.85,
+                "Racing Bulls": 0.80
+            }
+
             for d in drivers_base:
+                # 1. Start with Base Score
                 score = d['base']
-                if track_type in d['type_bonus']: score += 15 
-                elif "Street" in track_type and "Street" in d['type_bonus']: score += 10
-                score += np.random.randint(-3, 4) 
+                
+                # 2. Apply Season Weightage (The Real 2026 Factor)
+                team_weight = season_weights.get(d['team'], 1.0)
+                score = score * team_weight
+                
+                # 3. Track Type Bonus
+                if track_type in d['type_bonus']: 
+                    score += 15 
+                elif "Street" in track_type and "Street" in d['type_bonus']: 
+                    score += 10
+                
+                # 4. Kimi Antonelli "Peak Form" specific boost for Miami
+                if d['name'] == "ANT":
+                    score += 10  # Coming off 2 consecutive wins
+                
+                # 5. Random Variable (Race Day Luck)
+                score += np.random.randint(-2, 3) 
+                
                 probs.append({"Driver": d['name'], "RawScore": max(1, score)})
+            
             df = pd.DataFrame(probs)
             df['Probability'] = (df['RawScore'] / df['RawScore'].sum()) * 100
             df['Probability'] = df['Probability'].round(1)
             df = df.sort_values('Probability', ascending=True) 
+            
             return df
 
         col1, col2 = st.columns([1.2, 1.8])
