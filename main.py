@@ -111,7 +111,8 @@ def get_base64_image(image_path):
 # 📌 CONTAINER 1: TOP NAVIGATION BAR
 # ==========================================
 with st.container():
-    col_logo, col_nav = st.columns([1, 8])
+    # Columns allocation: Logo | Nav Menu | Branding
+    col_logo, col_nav, head_col2 = st.columns([1, 5, 4])
 
     with col_logo:
         logo_path = "assets/f1_logo.png"
@@ -129,6 +130,13 @@ with st.container():
             "SCHEDULE"
         ], label_visibility="collapsed", horizontal=True)
 
+    with head_col2:
+        # 🔥 Font size increased to 28px and weight 900 for a solid heading look
+        st.markdown("""
+            <h1 style='text-align: right; color: #FF1801; margin: 0; font-weight: 900; font-size: 28px; letter-spacing: 1px; line-height: 1.2;'>
+                F1 COMMAND CENTER
+            </h1>
+        """, unsafe_allow_html=True)
 
 # ==========================================
 # 📊 CONTAINER 2: MAIN BODY
@@ -161,112 +169,160 @@ with st.container():
         "Qatar GP (Lusail)": {"type": "High Speed Cornering", "dist": "5.419 km", "img": "assets/qatar.png", "base_lap": 83.5},
         "Abu Dhabi GP (Yas Marina)": {"type": "Balanced", "dist": "5.281 km", "img": "assets/abudhabi.png", "base_lap": 83.0}
     }
-
-
-    # ==========================================
-    # 🏎️ VIEW 1: ANALYSIS (Race Prediction) - DEFAULT VIEW
+# ==========================================
+    # 📊 VIEW 1: ANALYSIS (Fully Dynamic & Statistical)
     # ==========================================
     if menu == "ANALYSIS":
-        st.markdown("<h2 style='font-weight: bold; color: #111;'>Race Probability Engine</h2>", unsafe_allow_html=True)
-        
-        drivers_base = [
-            {"name": "VER", "full_name": "Max Verstappen", "team": "Red Bull Racing", "base": 90, "type_bonus": "High Speed Cornering"},
-            {"name": "LAW", "full_name": "Liam Lawson", "team": "Red Bull Racing", "base": 70, "type_bonus": "Balanced"},
-            {"name": "LEC", "full_name": "Charles Leclerc", "team": "Ferrari", "base": 88, "type_bonus": "Street"},
-            {"name": "HAM", "full_name": "Lewis Hamilton", "team": "Ferrari", "base": 85, "type_bonus": "Balanced"},
-            {"name": "NOR", "full_name": "Lando Norris", "team": "McLaren", "base": 89, "type_bonus": "High Downforce"},
-            {"name": "PIA", "full_name": "Oscar Piastri", "team": "McLaren", "base": 86, "type_bonus": "High Speed"},
-            {"name": "RUS", "full_name": "George Russell", "team": "Mercedes", "base": 85, "type_bonus": "Power Track"},
-            {"name": "ANT", "full_name": "Kimi Antonelli", "team": "Mercedes", "base": 72, "type_bonus": "Balanced"},
-            {"name": "ALO", "full_name": "Fernando Alonso", "team": "Aston Martin", "base": 80, "type_bonus": "Street"},
-            {"name": "STR", "full_name": "Lance Stroll", "team": "Aston Martin", "base": 65, "type_bonus": "Balanced"},
-            {"name": "GAS", "full_name": "Pierre Gasly", "team": "Alpine", "base": 70, "type_bonus": "Balanced"},
-            {"name": "COL", "full_name": "Franco Colapinto", "team": "Alpine", "base": 68, "type_bonus": "Street"},
-            {"name": "ALB", "full_name": "Alex Albon", "team": "Williams", "base": 75, "type_bonus": "Extreme Speed"},
-            {"name": "SAI", "full_name": "Carlos Sainz", "team": "Williams", "base": 78, "type_bonus": "Balanced"},
-            {"name": "HUL", "full_name": "Nico Hülkenberg", "team": "Audi", "base": 72, "type_bonus": "High Downforce"},
-            {"name": "BOR", "full_name": "Gabriel Bortoleto", "team": "Audi", "base": 60, "type_bonus": "Balanced"},
-            {"name": "OCO", "full_name": "Esteban Ocon", "team": "Haas", "base": 68, "type_bonus": "Power Track"},
-            {"name": "BEA", "full_name": "Oliver Bearman", "team": "Haas", "base": 62, "type_bonus": "Balanced"},
-            {"name": "LIN", "full_name": "Arvid Lindblad", "team": "Racing Bulls", "base": 55, "type_bonus": "Balanced"},
-            {"name": "TBA", "full_name": "TBA", "team": "Racing Bulls", "base": 50, "type_bonus": "Balanced"}
+        st.markdown("<h2 style='font-weight: bold; color: #111;'>Race Intelligence & Statistics</h2>", unsafe_allow_html=True)
+
+        # 1. Unified Data & Dynamic Calculation Logic (Fixes NameError & RUS bias)
+        d_base = [
+            {"name": "ANT", "team": "Mercedes", "base": 85, "vmax_base": 315},
+            {"name": "RUS", "team": "Mercedes", "base": 88, "vmax_base": 314},
+            {"name": "LEC", "team": "Ferrari", "base": 88, "vmax_base": 312},
+            {"name": "NOR", "team": "McLaren", "base": 89, "vmax_base": 310},
+            {"name": "VER", "team": "Red Bull Racing", "base": 82, "vmax_base": 305}
         ]
 
-        def calculate_probabilities(track_type):
+        def get_dynamic_analysis(track_type):
+            # 2026 Season Performance Weights
+            weights = {"Mercedes": 1.35, "Ferrari": 1.15, "McLaren": 1.10, "Red Bull Racing": 0.82}
             probs = []
-            
-            # 2026 Season Performance Weights (Latest Data)
-            # Mercedes dominating, Red Bull struggling
-            season_weights = {
-                "Red Bull Racing": 0.82,  # Max sits 9th in standings
-                "Mercedes": 1.35,         # Won all 3 opening rounds
-                "Ferrari": 1.15,          # Superb pace
-                "McLaren": 1.10,          # Strong podium contenders
-                "Williams": 0.95,
-                "Audi": 0.90,
-                "Haas": 0.85,
-                "Alpine": 0.85,
-                "Racing Bulls": 0.80
-            }
-
-            for d in drivers_base:
-                # 1. Start with Base Score
-                score = d['base']
+            for d in d_base:
+                # Probability Logic factoring in 2026 Technical Regulations
+                score = d['base'] * weights.get(d['team'], 1.0)
+                if "Street" in track_type or "High Speed" in track_type: score += 10
+                score += np.random.randint(-1, 2)
                 
-                # 2. Apply Season Weightage (The Real 2026 Factor)
-                team_weight = season_weights.get(d['team'], 1.0)
-                score = score * team_weight
+                # V-Max Logic (Varies by track type)
+                vmax = d['vmax_base']
+                if "Power" in track_type: vmax += 10
+                elif "Street" in track_type: vmax -= 15
                 
-                # 3. Track Type Bonus
-                if track_type in d['type_bonus']: 
-                    score += 15 
-                elif "Street" in track_type and "Street" in d['type_bonus']: 
-                    score += 10
-                
-                # 4. Kimi Antonelli "Peak Form" specific boost for Miami
-                if d['name'] == "ANT":
-                    score += 10  # Coming off 2 consecutive wins
-                
-                # 5. Random Variable (Race Day Luck)
-                score += np.random.randint(-2, 3) 
-                
-                probs.append({"Driver": d['name'], "RawScore": max(1, score)})
+                probs.append({"Driver": d['name'], "Raw": score, "Team": d['team'], "VMax": vmax})
             
             df = pd.DataFrame(probs)
-            df['Probability'] = (df['RawScore'] / df['RawScore'].sum()) * 100
-            df['Probability'] = df['Probability'].round(1)
-            df = df.sort_values('Probability', ascending=True) 
-            
-            return df
+            df['Probability'] = (df['Raw'] / df['Raw'].sum() * 100).round(1)
+            return df.sort_values('Probability', ascending=True)
 
-        col1, col2 = st.columns([1.2, 1.8])
-        
-        with col1:
-            st.caption("CHOOSE CIRCUIT")
+        # 2. Control Layout
+        col_ctrl, col_main = st.columns([1, 3])
+        with col_ctrl:
+            st.caption("SELECT CIRCUIT")
             selected_track = st.selectbox("Circuit", list(circuits_data.keys()), label_visibility="collapsed")
             track_info = circuits_data[selected_track]
             
-            st.markdown(f"""
-            <div style='background-color: #F8F9FA; padding: 20px; border-radius: 10px; border-left: 5px solid #FF1801; margin-top: 20px; margin-bottom: 20px;'>
-                <h4 style='margin-top: 0;'>{selected_track}</h4>
-                <p><b>Distance:</b> {track_info['dist']}<br>
-                <b>Circuit Type:</b> {track_info['type']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
+            # Data recalculation on change
+            prob_data = get_dynamic_analysis(track_info['type'])
+            top_d = prob_data.iloc[-1] 
+
+        # 3. DYNAMIC STAT CARDS (Revanth Style - No Sodi)
+        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+        with kpi1:
+            st.markdown(f"<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center; color:#111;'><h4>{top_d['Driver']}</h4><p>Win Favorite</p></div>", unsafe_allow_html=True)
+        with kpi2:
+            st.markdown(f"<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center; color:#111;'><h4>{top_d['Probability']}%</h4><p>Confidence Level</p></div>", unsafe_allow_html=True)
+        with kpi3:
+            st.markdown(f"<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center; color:#111;'><h4>{top_d['VMax']} km/h</h4><p>Predicted V-Max</p></div>", unsafe_allow_html=True)
+        with kpi4:
+            st.markdown(f"<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center; color:#111;'><h4>{track_info['type']}</h4><p>Layout Category</p></div>", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # 4. Visualization Layout
+        c1, c2 = st.columns([1.2, 1.8])
+        with c1:
+            # Map Display
             img_path = track_info['img']
-            if os.path.exists(img_path): st.image(img_path, use_container_width=True)
-            else: st.warning(f"Image not found. Please ensure it is saved as '{img_path}'.")
+            if os.path.exists(img_path):
+                st.image(img_path, use_container_width=True)
+            
+            # STRATEGY INSIGHT (Fixed: No more black box)
+            # st.markdown(f"""
+            # <div style='background-color: #111; color: white; padding: 20px; border-radius: 10px; border-left: 5px solid #FF1801; margin-top:10px;'>
+            #     <p style='margin:0; font-size:14px;'><b>Strategy Insight:</b> {top_d['Team']} dominance is expected here. Current 2026 regs give them a 1.35x efficiency multiplier on {track_info['type']} tracks.</p>
+            # </div>
+            # """, unsafe_allow_html=True)
 
-        with col2:
-            st.markdown("<h3 style='text-align: center;'>Win Probability Analysis</h3>", unsafe_allow_html=True)
-            prob_data = calculate_probabilities(track_info['type'])
-            fig = px.bar(prob_data, x='Probability', y='Driver', orientation='h', color='Probability', color_continuous_scale=['#FFCCCC', '#FF1801'], text='Probability', height=650)
-            fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', showlegend=False, font=dict(color="#111111"), xaxis=dict(title="Confidence %", showgrid=True, gridcolor='#E5E5E5'), yaxis=dict(title="", showgrid=False, tickfont=dict(weight='bold')))
-            fig.update_traces(texttemplate='%{text}%', textposition='outside')
-            st.plotly_chart(fig, use_container_width=True, theme=None)
+        with c2:
+            st.markdown(f"<h3 style='text-align: center; font-size:18px; color:#000;'>Win Probability Share</h3>", unsafe_allow_html=True)
+            
+            top_5_prob = prob_data.iloc[-5:] 
+            
+            fig_donut = px.pie(
+                top_5_prob, 
+                values='Probability', 
+                names='Driver', 
+                hole=0.6, 
+                color_discrete_sequence=['#FF1801', '#FF4D3D', '#FF7E70', '#FFAEAB', '#F9D5D3']
+            )
+            
+            # 🔥 FIX: weight property should be integer or 'bold'
+            fig_donut.update_layout(
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
+                margin=dict(l=0, r=0, t=0, b=0),
+                height=400,
+                annotations=[dict(
+                    text='WIN %', 
+                    x=0.5, y=0.5, 
+                    font_size=24, 
+                    showarrow=False, 
+                    font_family="sans-serif", 
+                    font_weight=900, # <--- Removed quotes ('900' -> 900)
+                    font_color="#000000"
+                )]
+            )
+            
+            fig_donut.update_traces(
+                textposition='inside', 
+                textinfo='percent+label',
+                textfont=dict(color="#FFF", size=12, weight='bold'),
+                marker=dict(line=dict(color='#FFF', width=2))
+            )
+            
+            st.plotly_chart(fig_donut, use_container_width=True)
 
+            # 🔥 REAL PLOTLY HEATMAP (Replaces the "SA" box)
+            st.markdown("#### 🌡️ Sector Dominance Heatmap")
+            
+            # Generating realistic 2026 sector data
+            # Rows: Drivers, Cols: Sectors
+            drivers_list = ['ANT', 'RUS', 'LEC', 'NOR', 'VER']
+            sectors = ['Sector 1 (Speed)', 'Sector 2 (Technical)', 'Sector 3 (Traction)']
+            
+            # Base data + random noise for realistic telemetry feel
+            heat_vals = [
+                [98, 92, 95], # ANT (Merc) - Fast & Traction
+                [95, 90, 92], # RUS (Merc)
+                [90, 98, 88], # LEC (Ferrari) - Technical king
+                [88, 85, 90], # NOR (McLaren)
+                [82, 80, 75]  # VER (Red Bull) - Struggling
+            ]
+            
+            fig_heat = px.imshow(
+                heat_vals,
+                labels=dict(x="Circuit Sectors", y="Driver", color="Efficiency"),
+                x=sectors,
+                y=drivers_list,
+                color_continuous_scale='Reds',
+                aspect="auto"
+            )
+            
+            fig_heat.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                margin=dict(l=0, r=0, t=10, b=0),
+                height=300,
+                xaxis=dict(tickfont=dict(color="#000", weight="bold")),
+                yaxis=dict(tickfont=dict(color="#000", weight="bold"))
+            )
+            
+            st.plotly_chart(fig_heat, use_container_width=True)
+            st.caption("Deep Red indicates 95%+ efficiency in specific telemetry sectors.")
 
+        
+            
     # ==========================================
     # ⏱️ VIEW 2: QUALIFYING PREDICTOR
     # ==========================================
@@ -357,13 +413,113 @@ with st.container():
             st.success(f"Pole Position: **{df_q.iloc[0]['Driver']} ({df_q.iloc[0]['Team']})** with a time of {df_q.iloc[0]['Lap Time']} at {selected_track}")
 
 
+   
+ 
     # ==========================================
-    # 🏎️ VIEW 3: DRIVERS UI 
+    # 🏎️ VIEW 3: DRIVERS (Statistical Scouting Report)
     # ==========================================
     elif menu == "DRIVERS":
-        st.markdown("<h1 style='font-weight: 900; font-size: 40px;'>F1 DRIVERS 2026</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 18px; color: #555; margin-bottom: 30px;'>Find the current Formula 1 drivers for the 2026 season</p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='font-weight: 900; color: #111;'>2026 Driver Intelligence Report</h2>", unsafe_allow_html=True)
+
+        # 1. TOP STATISTICAL STACKS (Revanth Style)
+        s1, s2, s3, s4 = st.columns(4)
+        with s1:
+            st.markdown("<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center;'><h4>K. ANTONELLI</h4><p style='color:#666;'>Standings Leader (78 pts)</p></div>", unsafe_allow_html=True)
+        with s2:
+            st.markdown("<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center;'><h4>98%</h4><p style='color:#666;'>Avg. Form Index</p></div>", unsafe_allow_html=True)
+        with s3:
+            st.markdown("<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center;'><h4>M. VERSTAPPEN</h4><p style='color:#666;'>Performance Variance High</p></div>", unsafe_allow_html=True)
+        with s4:
+            st.markdown("<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center;'><h4>+0.250s</h4><p style='color:#666;'>Avg. Qualifying Gap</p></div>", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # 2. PERFORMANCE ANALYSIS CHARTS
+        # PART 3.2: PERFORMANCE ANALYSIS CHARTS
+        c1, c2 = st.columns([1.5, 1.5])
         
+        with c1:
+            st.markdown("### 📊 Points vs. Recent Form")
+            df_perf_plot = pd.DataFrame({
+                'Driver': ['VER', 'LAW', 'LEC', 'HAM', 'NOR', 'PIA', 'RUS', 'ANT'],
+                'Points': [18, 4, 52, 48, 40, 35, 65, 78],
+                'Form': [65, 55, 88, 85, 82, 80, 95, 98]
+            })
+            fig_p = px.scatter(df_perf_plot, x='Points', y='Form', text='Driver', size='Form', color='Form', color_continuous_scale='Reds')
+            
+            # 🔥 PITCH BLACK TEXT FIX
+            fig_p.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)', 
+                paper_bgcolor='rgba(0,0,0,0)', 
+                height=400,
+                xaxis=dict(
+                    tickfont=dict(color="#000000", size=12, weight='bold'),
+                    title_font=dict(color="#000000", size=14, weight='bold'),
+                    gridcolor='#EEE'
+                ),
+                yaxis=dict(
+                    tickfont=dict(color="#000000", size=12, weight='bold'),
+                    title_font=dict(color="#000000", size=14, weight='bold'),
+                    gridcolor='#EEE'
+                )
+            )
+            fig_p.update_traces(textfont=dict(color="#000000", weight='bold'))
+            st.plotly_chart(fig_p, use_container_width=True)
+
+        with c2:
+            st.markdown("### ⏱️ Qualifying Consistency")
+            df_c = pd.DataFrame({'Driver': ['ANT', 'RUS', 'LEC', 'HAM', 'NOR'], 'Consistency': [95, 92, 89, 87, 85]})
+            fig_c = px.bar(df_c, x='Consistency', y='Driver', orientation='h', color='Consistency', color_continuous_scale='Blues')
+            
+            # 🔥 PITCH BLACK TEXT FIX
+            fig_c.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)', 
+                paper_bgcolor='rgba(0,0,0,0)', 
+                height=400, 
+                showlegend=False,
+                xaxis=dict(
+                    tickfont=dict(color="#000000", size=12, weight='bold'),
+                    title_font=dict(color="#000000", size=14, weight='bold'),
+                    gridcolor='#EEE'
+                ),
+                yaxis=dict(
+                    tickfont=dict(color="#000000", size=12, weight='bold'),
+                    title_font=dict(color="#000000", size=14, weight='bold')
+                )
+            )
+            st.plotly_chart(fig_c, use_container_width=True)
+
+        # with c2:
+        #     st.markdown("### ⏱️ Qualifying Consistency")
+        #     df_c = pd.DataFrame({'Driver': ['ANT', 'RUS', 'LEC', 'HAM', 'NOR'], 'Consistency': [95, 92, 89, 87, 85]})
+        #     fig_c = px.bar(df_c, x='Consistency', y='Driver', orientation='h', color='Consistency', color_continuous_scale='Blues')
+        #     fig_c.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', height=400, showlegend=False,
+        #                         xaxis=dict(tickfont=dict(color="#000")), yaxis=dict(tickfont=dict(color="#000")))
+        #     st.plotly_chart(fig_c, use_container_width=True)
+
+        st.markdown("---")
+        
+        # 3. DRIVER SCOUTING RADAR 
+        st.markdown("### 📇 Driver Intelligence Profiles")
+        scout1, scout2 = st.columns([1.5, 1.5])
+        with scout1:
+            st.markdown("#### 🛡️ Skill Radar: K. ANTONELLI")
+            sc_data = pd.DataFrame({'Metric': ['Qualifying Pace', 'Race Craft', 'Tyre Mgmt', 'Consistency', 'Aggression'], 'Score': [98, 92, 85, 95, 90]})
+            fig_r = px.line_polar(sc_data, r='Score', theta='Metric', line_close=True)
+            fig_r.update_layout(polar=dict(radialaxis=dict(visible=True, tickfont=dict(color="#000")), 
+                                angularaxis=dict(tickfont=dict(color="#000"))), showlegend=False)
+            st.plotly_chart(fig_r, use_container_width=True)
+
+        with scout2:
+            st.markdown("#### 🏎️ Telemetry Insights")
+            st.success("**Technical Observation:** Mercedes PU efficiency giving Antonelli a 0.150s advantage in S3.")
+            st.metric("Predicted Pole Prob.", "82%")
+            st.metric("Race Win Confidence", "75%")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # --- DRIVER LIST (PROFILES) ---
+        # 🚀 CLEANED UP: NO REDUNDANT SCATTER CALLS HERE
         drivers = [
             {"first": "Max", "last": "VERSTAPPEN", "team": "Red Bull Racing", "num": "1", "color": "linear-gradient(135deg, #3671C6 0%, #1A3A68 100%)", "img": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png"},
             {"first": "Liam", "last": "LAWSON", "team": "Red Bull Racing", "num": "30", "color": "linear-gradient(135deg, #3671C6 0%, #1A3A68 100%)", "img": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LIALAW01_Liam_Lawson/lialaw01.png"},
@@ -430,9 +586,58 @@ with st.container():
     # 🏎️ VIEW 4: TEAMS UI
     # ==========================================
     elif menu == "TEAMS":
-        st.markdown("<h1 style='font-weight: 900; font-size: 40px;'>F1 TEAMS 2026</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 18px; color: #555; margin-bottom: 30px;'>Discover everything you need to know about this year's Formula 1 teams.</p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='font-weight: 900; color: #111;'>2026 Constructor Intelligence</h2>", unsafe_allow_html=True)
 
+        # PART 4.1: CONSTRUCTOR PERFORMANCE STACKS
+        t1, t2, t3, t4 = st.columns(4)
+        with t1:
+            st.markdown("<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center;'><h4>MERCEDES</h4><p style='color:#666;'>Dominant PU Efficiency</p></div>", unsafe_allow_html=True)
+        with t2:
+            st.markdown("<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center;'><h4>FERRARI</h4><p style='color:#666;'>Highest Mechanical Grip</p></div>", unsafe_allow_html=True)
+        with t3:
+            st.markdown("<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center;'><h4>RED BULL</h4><p style='color:#666;'>Reliability Concerns (2026)</p></div>", unsafe_allow_html=True)
+        with t4:
+            st.markdown("<div style='background:#F1F3F4; padding:15px; border-radius:10px; text-align:center;'><h4>AUDI</h4><p style='color:#666;'>Entering Mid-Field Struggle</p></div>", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # PART 4.2: POWER RANKINGS & COMPARISON
+        col_rank, col_desc = st.columns([1.8, 1.2])
+        
+        with col_rank:
+            st.markdown("### 💠 Constructor Power Profile")
+            team_analysis = pd.DataFrame({
+                'Team': ["Mercedes", "Ferrari", "McLaren", "Red Bull", "Williams"],
+                'Engine': [98, 92, 88, 78, 85],
+                'Aero': [95, 90, 92, 80, 75]
+            })
+            
+            # Radar chart for Engine Efficiency comparison
+            fig_team = px.line_polar(team_analysis, r='Engine', theta='Team', line_close=True, color_discrete_sequence=['#FF1801'])
+            
+            # 🔥 PITCH BLACK LABELS FIX
+            fig_team.update_layout(
+                polar=dict(
+                    radialaxis=dict(visible=True, tickfont=dict(color="#000000", size=10, weight="bold")),
+                    angularaxis=dict(tickfont=dict(color="#000000", size=12, weight="bold"))
+                ),
+                height=450,
+                margin=dict(l=50, r=50, t=30, b=30)
+            )
+            st.plotly_chart(fig_team, use_container_width=True)
+
+        with col_desc:
+            st.markdown("### 🛠️ Technical Outlook")
+            st.info("""
+            **Mercedes HPP:** Leading the grid with an estimated 20hp advantage under the 2026 ERS regulations.
+            
+            **Red Bull Ford:** Currently struggling with energy deployment issues during long-run simulations.
+            """)
+            st.metric("Grid Reliability Avg.", "88%", "-4% vs 2025")
+            st.metric("Development Pace Index", "High (Mercedes)")
+
+        st.markdown("---")
+        st.markdown("### 🏎️ Grid Entry: Constructor Profiles")
         teams_data = [
             {"name": "Alpine", "color": "linear-gradient(135deg, #15151E 40%, rgba(0,144,255,0.3) 100%)", "logo": "https://ui-avatars.com/api/?name=Alpine&background=0090FF&color=fff&rounded=true&bold=true", "car": "https://media.formula1.com/d_team_car_fallback_image.png/content/dam/fom-website/teams/2024/alpine.png"},
             {"name": "Aston Martin", "color": "linear-gradient(135deg, #15151E 40%, rgba(34,153,113,0.3) 100%)", "logo": "https://ui-avatars.com/api/?name=Aston+Martin&background=229971&color=fff&rounded=true&bold=true", "car": "https://media.formula1.com/d_team_car_fallback_image.png/content/dam/fom-website/teams/2024/aston-martin.png"},
@@ -510,4 +715,4 @@ with st.container():
                     <div style="position: absolute; bottom: 20px; left: 20px; font-size: 18px; font-weight: 800; color: white;">{race['date']}</div>
                     {img_tag}
                 </div>
-                """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)    
